@@ -11,8 +11,8 @@ export default async function AdminDashboardWrapper() {
     adminGetAuditLogs(session.userId, undefined, undefined, 50), // Fetch more for pagination
   ])
 
-  const users = usersResult.users || []
-  const logs = logsResult.logs || []
+  const users = usersResult?.users || []
+  const logs = (logsResult?.success && logsResult?.logs) || []
 
   const stats = {
     totalUsers: users.length,

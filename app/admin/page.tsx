@@ -17,23 +17,27 @@ import { GlitchText } from "@/components/cyberpunk/glitch-text"
 import { cn } from "@/lib/utils"
 
 interface AdminDashboardClientProps {
-  stats: {
+  stats?: {
     totalUsers: number
     activeUsers: number
     lockedUsers: number
     admins: number
   }
-  logs: any[]
-  username: string
+  logs?: any[]
+  username?: string
 }
 
 const LOGS_PER_PAGE = 5
 
-export default function AdminDashboardClient({ stats, logs, username }: AdminDashboardClientProps) {
+export default function AdminDashboardClient({ 
+  stats = { totalUsers: 0, activeUsers: 0, lockedUsers: 0, admins: 0 }, 
+  logs = [], 
+  username = "User" 
+}: AdminDashboardClientProps) {
   const [currentPage, setCurrentPage] = useState(1)
-  const totalPages = Math.ceil(logs.length / LOGS_PER_PAGE)
+  const totalPages = Math.ceil((logs?.length || 0) / LOGS_PER_PAGE)
   const startIndex = (currentPage - 1) * LOGS_PER_PAGE
-  const currentLogs = logs.slice(startIndex, startIndex + LOGS_PER_PAGE)
+  const currentLogs = (logs || []).slice(startIndex, startIndex + LOGS_PER_PAGE)
 
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)))
@@ -88,7 +92,7 @@ export default function AdminDashboardClient({ stats, logs, username }: AdminDas
           <GlitchText as="h2" className="text-base md:text-lg" glow="cyan">
             RECENT ACTIVITY
           </GlitchText>
-          <span className="ml-auto text-xs text-muted-foreground font-mono">{logs.length} total entries</span>
+          <span className="ml-auto text-xs text-muted-foreground font-mono">{(logs?.length || 0)} total entries</span>
         </div>
 
         <div className="overflow-x-auto">

@@ -5,7 +5,8 @@ import { useState } from "react"
 import { CyberInput } from "@/components/cyberpunk/cyber-input"
 import { CyberButton } from "@/components/cyberpunk/cyber-button"
 import { PasswordStrengthMeter } from "@/components/cyberpunk/password-strength"
-import { User, Lock, CheckCircle } from "lucide-react"
+import { FormSection } from "./form-section"
+import { User, Lock, CheckCircle, Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface AddUserFormProps {
@@ -58,14 +59,15 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-xl mx-auto">
+    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8 w-full">
       {/* Credentials Section */}
-      <div className="space-y-4">
-        <h4 className="text-xs uppercase tracking-widest text-cyber-cyan font-display border-b border-cyber-cyan/20 pb-2 flex items-center gap-2">
-          <User size={14} />
-          Login Credentials
-        </h4>
-        <div className="grid gap-4">
+      <FormSection
+        title="Login Credentials"
+        icon={<User size={18} />}
+        color="cyan"
+        subtitle="Set up the account username and password"
+      >
+        <div className="space-y-4 md:space-y-5">
           <CyberInput
             label="Username"
             icon={<User size={18} />}
@@ -75,25 +77,29 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
             onChange={(e) => setUsername(e.target.value)}
             required
           />
-          <CyberInput
-            label="Password"
-            icon={<Lock size={18} />}
-            type="password"
-            placeholder="Enter password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          <PasswordStrengthMeter password={password} />
+          <div className="space-y-3">
+            <CyberInput
+              label="Password"
+              icon={<Lock size={18} />}
+              type="password"
+              placeholder="Enter password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <PasswordStrengthMeter password={password} />
+          </div>
         </div>
-      </div>
+      </FormSection>
 
       {/* User Level Section */}
-      <div className="space-y-4">
-        <h4 className="text-xs uppercase tracking-widest text-cyber-magenta font-display border-b border-cyber-magenta/20 pb-2">
-          Access Level
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <FormSection
+        title="Access Level"
+        icon={<Shield size={18} />}
+        color="magenta"
+        subtitle="Define the user's role and permissions level"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           <label
             className={cn(
               "flex items-center gap-3 cursor-pointer p-4 rounded-sm transition-all duration-300 touch-manipulation",
@@ -121,19 +127,19 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
             >
               {userLevel === "regular" && <CheckCircle size={14} className="text-cyber-black" />}
             </span>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <span
                 className={cn(
-                  "text-sm font-display uppercase tracking-wider block",
+                  "text-xs sm:text-sm font-display uppercase tracking-wider block",
                   userLevel === "regular" ? "text-cyber-cyan" : "text-foreground group-hover:text-cyber-cyan",
                 )}
               >
                 Regular User
               </span>
-              <span className="text-[10px] text-muted-foreground font-mono">Standard access privileges</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono">Standard access</span>
             </div>
             {userLevel === "regular" && (
-              <span className="absolute top-2 right-2 w-2 h-2 bg-cyber-cyan rounded-full animate-pulse" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-cyber-cyan rounded-full animate-pulse shrink-0" />
             )}
           </label>
 
@@ -164,36 +170,38 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
             >
               {userLevel === "admin" && <CheckCircle size={14} className="text-cyber-black" />}
             </span>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <span
                 className={cn(
-                  "text-sm font-display uppercase tracking-wider block",
+                  "text-xs sm:text-sm font-display uppercase tracking-wider block",
                   userLevel === "admin" ? "text-cyber-magenta" : "text-foreground group-hover:text-cyber-magenta",
                 )}
               >
                 Administrator
               </span>
-              <span className="text-[10px] text-muted-foreground font-mono">Full system control</span>
+              <span className="text-[10px] sm:text-xs text-muted-foreground font-mono">Full control</span>
             </div>
             {userLevel === "admin" && (
-              <span className="absolute top-2 right-2 w-2 h-2 bg-cyber-magenta rounded-full animate-pulse" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-cyber-magenta rounded-full animate-pulse shrink-0" />
             )}
           </label>
         </div>
-      </div>
+      </FormSection>
 
       {/* Permissions Section */}
-      <div className="space-y-4">
-        <h4 className="text-xs uppercase tracking-widest text-cyber-green font-display border-b border-cyber-green/20 pb-2">
-          Permissions
-        </h4>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <FormSection
+        title="Permissions"
+        icon={<Shield size={18} />}
+        color="green"
+        subtitle="Grant specific administrative capabilities"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
           {Object.entries(restrictions).map(([key, value]) => (
             <label
               key={key}
               className={cn(
                 "flex items-center gap-3 cursor-pointer p-3 rounded-sm transition-all duration-300 touch-manipulation",
-                "border min-h-[56px] relative group",
+                "border min-h-14 relative group",
                 value
                   ? "bg-cyber-green/20 border-cyber-green shadow-[0_0_15px_rgba(0,255,65,0.25)]"
                   : "bg-cyber-black/30 border-cyber-cyan/20 hover:bg-cyber-green/5 hover:border-cyber-green/30",
@@ -207,7 +215,7 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
               />
               <span
                 className={cn(
-                  "w-6 h-6 border-2 rounded-sm transition-all shrink-0 flex items-center justify-center",
+                  "w-5 h-5 border-2 rounded-sm transition-all shrink-0 flex items-center justify-center",
                   value
                     ? "border-cyber-green bg-cyber-green"
                     : "border-cyber-cyan/50 group-hover:border-cyber-green/70",
@@ -215,7 +223,7 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
               >
                 {value && (
                   <svg
-                    className="w-4 h-4 text-cyber-black"
+                    className="w-3 h-3 text-cyber-black"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -227,35 +235,44 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
               </span>
               <span
                 className={cn(
-                  "text-sm font-mono transition-colors",
+                  "text-xs sm:text-sm font-mono transition-colors",
                   value ? "text-cyber-green" : "text-foreground group-hover:text-cyber-green",
                 )}
               >
                 {formatPermission(key)}
               </span>
               {value && (
-                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-cyber-green rounded-full animate-pulse" />
+                <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-cyber-green rounded-full animate-pulse shrink-0" />
               )}
             </label>
           ))}
         </div>
-      </div>
+      </FormSection>
 
       {/* Error Message */}
       {error && (
-        <div className="p-4 bg-cyber-red/10 border border-cyber-red/30 rounded-sm animate-in shake">
-          <p className="text-sm text-cyber-red font-mono">{error}</p>
+        <div className="p-3 sm:p-4 bg-cyber-red/10 border border-cyber-red/30 rounded-sm animate-in shake">
+          <p className="text-xs sm:text-sm text-cyber-red font-mono">{error}</p>
         </div>
       )}
 
-      {/* Submit Buttons */}
+      {/* Action Buttons */}
       <div className="pt-4 border-t border-cyber-cyan/20 flex flex-col-reverse sm:flex-row gap-3">
         {onCancel && (
-          <CyberButton type="button" variant="ghost" className="flex-1 sm:flex-none" onClick={onCancel}>
+          <CyberButton
+            type="button"
+            variant="ghost"
+            className="flex-1 sm:flex-none sm:min-w-[140px]"
+            onClick={onCancel}
+          >
             Cancel
           </CyberButton>
         )}
-        <CyberButton type="submit" className="flex-1 sm:flex-none sm:min-w-[180px]" loading={loading}>
+        <CyberButton
+          type="submit"
+          className="flex-1 sm:flex-none sm:min-w-[180px]"
+          loading={loading}
+        >
           Create User
         </CyberButton>
       </div>
