@@ -25,21 +25,20 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
       document.body.style.overflow = "hidden"
       document.documentElement.style.overflow = "hidden"
       
-      // Add passive touch listener to overlay
+      // Prevent scroll on overlay, but allow in content
       const overlay = overlayRef.current
       if (overlay) {
-        const handleTouchMove = (e: TouchEvent) => {
-          // Allow scrolling within the modal content
-          if (contentRef.current && contentRef.current.contains(e.target as Node)) {
-            return
+        const handleTouchMoveOnOverlay = (e: TouchEvent) => {
+          const target = e.target as Node
+          // Only prevent if touch is directly on overlay, not on modal content
+          if (target === overlay) {
+            e.preventDefault()
           }
-          // Prevent scrolling on the overlay background
-          e.preventDefault()
         }
         
-        overlay.addEventListener("touchmove", handleTouchMove, { passive: false })
+        overlay.addEventListener("touchmove", handleTouchMoveOnOverlay, { passive: false })
         return () => {
-          overlay.removeEventListener("touchmove", handleTouchMove)
+          overlay.removeEventListener("touchmove", handleTouchMoveOnOverlay)
           document.body.style.overflow = ""
           document.documentElement.style.overflow = ""
         }
@@ -94,7 +93,10 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
       className="fixed inset-0 z-50 flex items-center justify-center bg-cyber-black/80 backdrop-blur-sm animate-in fade-in duration-300"
       onClick={onClose}
       role="presentation"
-      style={{ overscrollBehavior: "none" }}
+      style={{ 
+        overscrollBehavior: "contain",
+        touchAction: "pan-y",
+      } as React.CSSProperties}
     >
       <div
         ref={modalRef}
@@ -141,18 +143,16 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
           ref={contentRef}
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6",
+            "scrollbar-thin scrollbar-thumb-cyber-cyan/30 scrollbar-track-transparent",
             hasScroll && "pr-2 sm:pr-3",
           )}
-          onTouchMove={(e) => {
-            // Allow touch scrolling
-            e.stopPropagation()
-          }}
           style={{
             WebkitOverflowScrolling: "touch",
             scrollBehavior: "smooth",
             overscrollBehavior: "contain",
-            touchAction: "pan-y",
+            touchAction: "pan-y pinch-zoom",
             WebkitTouchCallout: "none",
+            WebkitUserSelect: "text",
           } as React.CSSProperties}
         >
           <div className="w-full">
