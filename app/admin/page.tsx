@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import {
   Shield,
   Users,
@@ -11,6 +11,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  RefreshCw,
 } from "lucide-react"
 import { CyberPanel } from "@/components/cyberpunk/cyber-panel"
 import { GlitchText } from "@/components/cyberpunk/glitch-text"
@@ -35,13 +36,43 @@ export default function AdminDashboardClient({
   username = "User" 
 }: AdminDashboardClientProps) {
   const [currentPage, setCurrentPage] = useState(1)
-  const totalPages = Math.ceil((logs?.length || 0) / LOGS_PER_PAGE)
+  const [displayLogs, setDisplayLogs] = useState(logs)
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  
+  const totalPages = Math.ceil((displayLogs?.length || 0) / LOGS_PER_PAGE)
   const startIndex = (currentPage - 1) * LOGS_PER_PAGE
-  const currentLogs = (logs || []).slice(startIndex, startIndex + LOGS_PER_PAGE)
+  const currentLogs = (displayLogs || []).slice(startIndex, startIndex + LOGS_PER_PAGE)
 
   const goToPage = (page: number) => {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)))
   }
+
+  // Real-time refresh functionality
+  const refreshLogs = useCallback(async () => {
+    setIsRefreshing(true)
+    try {
+      const response = await fetch("/api/admin/logs?limit=50")
+      const data = await response.json()
+      if (data.success && Array.isArray(data.logs)) {
+        setDisplayLogs(data.logs)
+        // Reset to first page when new data is fetched
+        setCurrentPage(1)
+      }
+    } catch (error) {
+      console.error("Failed to refresh logs:", error)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [])
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      refreshLogs()
+    }, 30000)
+
+    return () => clearInterval(interval)
+  }, [refreshLogs])
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -86,23 +117,41 @@ export default function AdminDashboardClient({
       </div>
 
       {/* Recent Activity with Scrollable Table and Pagination */}
-      <CyberPanel className="!p-0 overflow-hidden">
-        <div className="flex items-center gap-3 p-4 border-b border-cyber-cyan/20">
-          <FileText className="text-cyber-cyan" size={20} />
-          <GlitchText as="h2" className="text-base md:text-lg" glow="cyan">
-            RECENT ACTIVITY
-          </GlitchText>
-          <span className="ml-auto text-xs text-muted-foreground font-mono">{(logs?.length || 0)} total entries</span>
+      <CyberPanel className="p-0! overflow-hidden">
+        <div className="flex items-center justify-between gap-3 p-4 border-b border-cyber-cyan/20">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <FileText className="text-cyber-cyan shrink-0" size={20} />
+            <GlitchText as="h2" className="text-base md:text-lg" glow="cyan">
+              RECENT ACTIVITY
+            </GlitchText>
+          </div>
+          <button
+            onClick={refreshLogs}
+            disabled={isRefreshing}
+            className={cn(
+              "shrink-0 p-2 w-10 h-10 flex items-center justify-center rounded-sm transition-all",
+              "border border-cyber-cyan/20 text-cyber-cyan",
+              isRefreshing
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40",
+            )}
+            title="Refresh activity logs"
+          >
+            <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
+          </button>
+          <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
+            {(displayLogs?.length || 0)} entries
+          </span>
         </div>
 
-        <div className="overflow-x-auto">
-          <div className="min-w-[600px]">
+        <div className="overflow-x-auto overflow-y-hidden max-h-[50vh]">
+          <div className="px-3 sm:px-4 md:px-6 min-w-full">
             {/* Sticky Header */}
-            <div className="grid grid-cols-[1fr_120px_1fr_100px] gap-4 p-3 bg-cyber-black/70 border-b border-cyber-cyan/20 sticky top-0">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display">User</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display">Action</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display">Details</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display text-right">
+            <div className="grid grid-cols-[1fr_100px_1fr_120px] gap-2 sm:gap-4 p-3 bg-cyber-black/70 border-b border-cyber-cyan/20 sticky top-0 z-10">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display min-w-0">User</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap">Action</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display hidden sm:block min-w-0">Details</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display text-right whitespace-nowrap">
                 Time
               </div>
             </div>
@@ -115,15 +164,15 @@ export default function AdminDashboardClient({
                 currentLogs.map((log: any) => (
                   <div
                     key={log.id}
-                    className="grid grid-cols-[1fr_120px_1fr_100px] gap-4 p-3 hover:bg-cyber-cyan/5 transition-colors items-center"
+                    className="grid grid-cols-[1fr_100px_1fr_120px] gap-2 sm:gap-4 p-3 hover:bg-cyber-cyan/5 transition-colors items-center"
                   >
-                    <div className="text-sm font-mono text-cyber-cyan truncate">{log.username || "System"}</div>
-                    <div>
+                    <div className="text-xs sm:text-sm font-mono text-cyber-cyan truncate">{log.username || "System"}</div>
+                    <div className="flex justify-center">
                       <ActionBadge action={log.action} />
                     </div>
-                    <div className="text-xs text-muted-foreground font-mono truncate">{formatDetails(log.details)}</div>
-                    <div className="text-[10px] text-muted-foreground font-mono text-right whitespace-nowrap">
-                      {new Date(log.created_at).toLocaleString()}
+                    <div className="text-xs text-muted-foreground font-mono truncate hidden sm:block">{formatDetails(log.details)}</div>
+                    <div className="text-[10px] sm:text-xs text-muted-foreground font-mono text-right whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleTimeString()}
                     </div>
                   </div>
                 ))
@@ -131,100 +180,6 @@ export default function AdminDashboardClient({
             </div>
           </div>
         </div>
-
-        {totalPages > 1 && (
-          <div className="border-t border-cyber-cyan/20 p-3 flex flex-col sm:flex-row items-center justify-between gap-3">
-            <div className="text-xs text-muted-foreground font-mono">
-              Page {currentPage} of {totalPages}
-            </div>
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => goToPage(1)}
-                disabled={currentPage === 1}
-                className={cn(
-                  "p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-sm transition-all",
-                  "border border-cyber-cyan/20",
-                  currentPage === 1
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40",
-                )}
-              >
-                <ChevronsLeft size={14} className="text-cyber-cyan" />
-              </button>
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className={cn(
-                  "p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-sm transition-all",
-                  "border border-cyber-cyan/20",
-                  currentPage === 1
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40",
-                )}
-              >
-                <ChevronLeft size={14} className="text-cyber-cyan" />
-              </button>
-
-              {/* Page numbers */}
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum: number
-                  if (totalPages <= 5) {
-                    pageNum = i + 1
-                  } else if (currentPage <= 3) {
-                    pageNum = i + 1
-                  } else if (currentPage >= totalPages - 2) {
-                    pageNum = totalPages - 4 + i
-                  } else {
-                    pageNum = currentPage - 2 + i
-                  }
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => goToPage(pageNum)}
-                      className={cn(
-                        "min-w-[36px] min-h-[36px] flex items-center justify-center rounded-sm transition-all",
-                        "border text-xs font-mono",
-                        currentPage === pageNum
-                          ? "bg-cyber-cyan/20 border-cyber-cyan/50 text-cyber-cyan"
-                          : "border-cyber-cyan/20 hover:bg-cyber-cyan/10 text-muted-foreground",
-                      )}
-                    >
-                      {pageNum}
-                    </button>
-                  )
-                })}
-              </div>
-
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className={cn(
-                  "p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-sm transition-all",
-                  "border border-cyber-cyan/20",
-                  currentPage === totalPages
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40",
-                )}
-              >
-                <ChevronRight size={14} className="text-cyber-cyan" />
-              </button>
-              <button
-                onClick={() => goToPage(totalPages)}
-                disabled={currentPage === totalPages}
-                className={cn(
-                  "p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-sm transition-all",
-                  "border border-cyber-cyan/20",
-                  currentPage === totalPages
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40",
-                )}
-              >
-                <ChevronsRight size={14} className="text-cyber-cyan" />
-              </button>
-            </div>
-          </div>
-        )}
       </CyberPanel>
     </div>
   )

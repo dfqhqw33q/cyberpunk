@@ -17,13 +17,34 @@ interface CyberModalProps {
 export function CyberModal({ isOpen, onClose, title, children, className, size = "md" }: CyberModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
+  const overlayRef = useRef<HTMLDivElement>(null)
   const [hasScroll, setHasScroll] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden"
-      // Add class for iOS Safari scrolling
       document.documentElement.style.overflow = "hidden"
+      
+      // Add passive touch listener to overlay
+      const overlay = overlayRef.current
+      if (overlay) {
+        const handleTouchMove = (e: TouchEvent) => {
+          // Allow scrolling within the modal content
+          if (contentRef.current && contentRef.current.contains(e.target as Node)) {
+            return
+          }
+          // Prevent scrolling on the overlay background
+          e.preventDefault()
+        }
+        
+        overlay.addEventListener("touchmove", handleTouchMove, { passive: false })
+        return () => {
+          overlay.removeEventListener("touchmove", handleTouchMove)
+          document.body.style.overflow = ""
+          document.documentElement.style.overflow = ""
+        }
+      }
+      
       return () => {
         document.body.style.overflow = ""
         document.documentElement.style.overflow = ""
@@ -69,9 +90,11 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-cyber-black/80 backdrop-blur-sm animate-in fade-in duration-300"
+      ref={overlayRef}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-cyber-black/80 backdrop-blur-sm animate-in fade-in duration-300"
       onClick={onClose}
       role="presentation"
+      style={{ overscrollBehavior: "none" }}
     >
       <div
         ref={modalRef}
@@ -120,12 +143,17 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
             "flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6",
             hasScroll && "pr-2 sm:pr-3",
           )}
+          onTouchMove={(e) => {
+            // Allow touch scrolling
+            e.stopPropagation()
+          }}
           style={{
             WebkitOverflowScrolling: "touch",
             scrollBehavior: "smooth",
             overscrollBehavior: "contain",
             touchAction: "pan-y",
-          }}
+            WebkitTouchCallout: "none",
+          } as React.CSSProperties}
         >
           <div className="w-full">
             {children}
