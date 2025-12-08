@@ -118,12 +118,13 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
           ref={contentRef}
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 md:p-6",
-            "-webkit-overflow-scrolling: touch",
             hasScroll && "pr-2 sm:pr-3",
           )}
           style={{
             WebkitOverflowScrolling: "touch",
             scrollBehavior: "smooth",
+            overscrollBehavior: "contain",
+            touchAction: "pan-y",
           }}
         >
           <div className="w-full">

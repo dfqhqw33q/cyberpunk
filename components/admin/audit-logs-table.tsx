@@ -32,64 +32,68 @@ export function AuditLogsTable({ logs }: AuditLogsTableProps) {
   }
 
   return (
-    <div className="flex flex-col">
-      <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
-        <table className="w-full min-w-[800px]">
-          <thead className="sticky top-0 z-10">
-            <tr className="bg-cyber-black border-b border-cyber-cyan/20">
-              <th className="text-left p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
-                <div className="flex items-center gap-2">
-                  <Clock size={14} />
-                  Timestamp
-                </div>
-              </th>
-              <th className="text-left p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
-                <div className="flex items-center gap-2">
-                  <User size={14} />
-                  User
-                </div>
-              </th>
-              <th className="text-left p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
-                Action
-              </th>
-              <th className="text-left p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
-                Details
-              </th>
-              <th className="text-left p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
-                IP Address
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentLogs.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="p-8 text-center text-muted-foreground">
-                  No audit logs found
-                </td>
+    <div className="flex flex-col w-full">
+      <div className="overflow-x-auto overflow-y-auto max-h-[70vh] -mx-3 sm:-mx-4 md:-mx-6">
+        <div className="px-3 sm:px-4 md:px-6">
+          <table className="w-full min-w-full">
+            <thead className="sticky top-0 z-10">
+              <tr className="bg-cyber-black border-b border-cyber-cyan/20">
+                <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
+                  <div className="flex items-center gap-2">
+                    <Clock size={14} />
+                    <span className="hidden sm:inline">Timestamp</span>
+                    <span className="sm:hidden">Time</span>
+                  </div>
+                </th>
+                <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
+                  <div className="flex items-center gap-2">
+                    <User size={14} />
+                    User
+                  </div>
+                </th>
+                <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
+                  <span className="hidden sm:inline">Action</span>
+                  <span className="sm:hidden">Act</span>
+                </th>
+                <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black hidden lg:table-cell">
+                  Details
+                </th>
+                <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black hidden md:table-cell">
+                  IP
+                </th>
               </tr>
-            ) : (
-              currentLogs.map((log) => (
-                <tr key={log.id} className="border-b border-cyber-cyan/10 hover:bg-cyber-cyan/5 transition-colors">
-                  <td className="p-4 text-sm text-muted-foreground font-mono whitespace-nowrap">
-                    {new Date(log.created_at).toLocaleString()}
-                  </td>
-                  <td className="p-4">
-                    <span className="text-cyber-cyan text-sm font-mono">{log.username || "System"}</span>
-                  </td>
-                  <td className="p-4">
-                    <ActionBadge action={log.action} />
-                  </td>
-                  <td className="p-4 text-sm text-muted-foreground max-w-xs">
-                    <span className="block truncate font-mono">{formatDetails(log.details)}</span>
-                  </td>
-                  <td className="p-4 text-sm text-muted-foreground font-mono whitespace-nowrap">
-                    {log.ip_address || "-"}
+            </thead>
+            <tbody>
+              {currentLogs.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="p-8 text-center text-muted-foreground">
+                    No audit logs found
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                currentLogs.map((log) => (
+                  <tr key={log.id} className="border-b border-cyber-cyan/10 hover:bg-cyber-cyan/5 transition-colors">
+                    <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground font-mono whitespace-nowrap">
+                      {new Date(log.created_at).toLocaleString()}
+                    </td>
+                    <td className="p-2 sm:p-4">
+                      <span className="text-cyber-cyan text-xs sm:text-sm font-mono">{log.username || "System"}</span>
+                    </td>
+                    <td className="p-2 sm:p-4">
+                      <ActionBadge action={log.action} />
+                    </td>
+                    <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground max-w-xs hidden lg:table-cell">
+                      <span className="block truncate font-mono">{formatDetails(log.details)}</span>
+                    </td>
+                    <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground font-mono whitespace-nowrap hidden md:table-cell">
+                      {log.ip_address || "-"}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {totalPages > 1 && (
