@@ -29,14 +29,16 @@ interface AdminDashboardClientProps {
 }
 
 const LOGS_PER_PAGE = 5
+const AUTO_REFRESH_INTERVAL = 30000 // 30 seconds
 
 export default function AdminDashboardClient({ 
-  stats = { totalUsers: 0, activeUsers: 0, lockedUsers: 0, admins: 0 }, 
-  logs = [], 
+  stats: initialStats = { totalUsers: 0, activeUsers: 0, lockedUsers: 0, admins: 0 }, 
+  logs: initialLogs = [], 
   username = "User" 
 }: AdminDashboardClientProps) {
   const [currentPage, setCurrentPage] = useState(1)
-  const [displayLogs, setDisplayLogs] = useState(logs)
+  const [stats, setStats] = useState(initialStats)
+  const [displayLogs, setDisplayLogs] = useState(initialLogs)
   const [isRefreshing, setIsRefreshing] = useState(false)
   
   const totalPages = Math.ceil((displayLogs?.length || 0) / LOGS_PER_PAGE)
@@ -47,32 +49,47 @@ export default function AdminDashboardClient({
     setCurrentPage(Math.max(1, Math.min(page, totalPages)))
   }
 
-  // Real-time refresh functionality
-  const refreshLogs = useCallback(async () => {
-    setIsRefreshing(true)
+  // Refresh all dashboard data (stats and logs)
+  const refreshAllData = useCallback(async (skipLoading = false) => {
+    if (!skipLoading) setIsRefreshing(true)
     try {
-      const response = await fetch("/api/admin/logs?limit=50")
-      const data = await response.json()
-      if (data.success && Array.isArray(data.logs)) {
-        setDisplayLogs(data.logs)
+      const [statsResponse, logsResponse] = await Promise.all([
+        fetch("/api/admin/stats"),
+        fetch("/api/admin/logs?limit=50"),
+      ])
+
+      const statsData = await statsResponse.json()
+      const logsData = await logsResponse.json()
+
+      if (statsData.success && statsData.stats) {
+        setStats(statsData.stats)
+      }
+
+      if (logsData.success && Array.isArray(logsData.logs)) {
+        setDisplayLogs(logsData.logs)
         // Reset to first page when new data is fetched
         setCurrentPage(1)
       }
     } catch (error) {
-      console.error("Failed to refresh logs:", error)
+      console.error("Failed to refresh dashboard data:", error)
     } finally {
-      setIsRefreshing(false)
+      if (!skipLoading) setIsRefreshing(false)
     }
   }, [])
 
-  // Auto-refresh every 30 seconds
+  // Fetch data on component mount
+  useEffect(() => {
+    refreshAllData(true)
+  }, [refreshAllData])
+
+  // Auto-refresh all data every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      refreshLogs()
-    }, 30000)
+      refreshAllData(true)
+    }, AUTO_REFRESH_INTERVAL)
 
     return () => clearInterval(interval)
-  }, [refreshLogs])
+  }, [refreshAllData])
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -117,7 +134,8 @@ export default function AdminDashboardClient({
       </div>
 
       {/* Recent Activity with Scrollable Table and Pagination */}
-      <CyberPanel className="p-0! overflow-hidden">
+      <CyberPanel className="!p-0 overflow-hidden flex flex-col">
+        {/* Header with Refresh Button */}
         <div className="flex items-center justify-between gap-3 p-4 border-b border-cyber-cyan/20">
           <div className="flex items-center gap-3 min-w-0 flex-1">
             <FileText className="text-cyber-cyan shrink-0" size={20} />
@@ -126,7 +144,7 @@ export default function AdminDashboardClient({
             </GlitchText>
           </div>
           <button
-            onClick={refreshLogs}
+            onClick={refreshAllData}
             disabled={isRefreshing}
             className={cn(
               "shrink-0 p-2 w-10 h-10 flex items-center justify-center rounded-sm transition-all",
@@ -135,51 +153,169 @@ export default function AdminDashboardClient({
                 ? "opacity-50 cursor-not-allowed"
                 : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40",
             )}
-            title="Refresh activity logs"
+            title="Refresh all dashboard data"
           >
             <RefreshCw size={16} className={isRefreshing ? "animate-spin" : ""} />
           </button>
-          <span className="text-xs text-muted-foreground font-mono whitespace-nowrap">
-            {(displayLogs?.length || 0)} entries
-          </span>
         </div>
 
-        <div className="overflow-x-auto overflow-y-hidden max-h-[50vh]">
-          <div className="px-3 sm:px-4 md:px-6 min-w-full">
-            {/* Sticky Header */}
-            <div className="grid grid-cols-[1fr_100px_1fr_120px] gap-2 sm:gap-4 p-3 bg-cyber-black/70 border-b border-cyber-cyan/20 sticky top-0 z-10">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display min-w-0">User</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap">Action</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display hidden sm:block min-w-0">Details</div>
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-display text-right whitespace-nowrap">
-                Time
-              </div>
-            </div>
-
-            {/* Table Body */}
-            <div className="divide-y divide-cyber-cyan/10">
-              {currentLogs.length === 0 ? (
-                <p className="text-muted-foreground text-sm text-center py-8">No recent activity</p>
-              ) : (
-                currentLogs.map((log: any) => (
-                  <div
-                    key={log.id}
-                    className="grid grid-cols-[1fr_100px_1fr_120px] gap-2 sm:gap-4 p-3 hover:bg-cyber-cyan/5 transition-colors items-center"
-                  >
-                    <div className="text-xs sm:text-sm font-mono text-cyber-cyan truncate">{log.username || "System"}</div>
-                    <div className="flex justify-center">
-                      <ActionBadge action={log.action} />
-                    </div>
-                    <div className="text-xs text-muted-foreground font-mono truncate hidden sm:block">{formatDetails(log.details)}</div>
-                    <div className="text-[10px] sm:text-xs text-muted-foreground font-mono text-right whitespace-nowrap">
-                      {new Date(log.created_at).toLocaleTimeString()}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+        <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
+          <div className="px-3 sm:px-4 md:px-6">
+            <table className="w-full table-fixed md:table-auto">
+              <colgroup>
+                <col className="w-24 sm:w-32" />
+                <col className="w-20 sm:w-28" />
+                <col className="hidden lg:table-column w-48" />
+                <col className="w-24 sm:w-32" />
+              </colgroup>
+              <thead className="sticky top-0 z-10">
+                <tr className="bg-cyber-black border-b border-cyber-cyan/20">
+                  <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
+                    User
+                  </th>
+                  <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
+                    <span className="hidden sm:inline">Action</span>
+                    <span className="sm:hidden">Act</span>
+                  </th>
+                  <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black hidden lg:table-cell">
+                    Details
+                  </th>
+                  <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
+                    Time
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentLogs.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                      No recent activity
+                    </td>
+                  </tr>
+                ) : (
+                  currentLogs.map((log: any) => (
+                    <tr key={log.id} className="border-b border-cyber-cyan/10 hover:bg-cyber-cyan/5 transition-colors">
+                      <td className="p-2 sm:p-4 text-xs sm:text-sm text-cyber-cyan font-mono truncate">
+                        {log.username || "System"}
+                      </td>
+                      <td className="p-2 sm:p-4">
+                        <ActionBadge action={log.action} />
+                      </td>
+                      <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground hidden lg:table-cell">
+                        <span className="block truncate font-mono">{formatDetails(log.details)}</span>
+                      </td>
+                      <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground font-mono whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleTimeString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
+
+        {totalPages > 1 && (
+          <div className="border-t border-cyber-cyan/20 p-4 flex flex-col sm:flex-row items-center justify-between gap-4 bg-cyber-black/50">
+            <div className="text-xs text-muted-foreground font-mono">
+              Showing {startIndex + 1}-{Math.min(startIndex + LOGS_PER_PAGE, displayLogs.length)} of {displayLogs.length} entries
+            </div>
+
+            <div className="flex items-center gap-1 flex-wrap justify-center">
+              {/* First page */}
+              <button
+                onClick={() => goToPage(1)}
+                disabled={currentPage === 1}
+                className={cn(
+                  "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-sm transition-all",
+                  "border border-cyber-cyan/20",
+                  currentPage === 1
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40 active:bg-cyber-cyan/20",
+                )}
+              >
+                <ChevronsLeft size={16} className="text-cyber-cyan" />
+              </button>
+
+              {/* Previous page */}
+              <button
+                onClick={() => goToPage(currentPage - 1)}
+                disabled={currentPage === 1}
+                className={cn(
+                  "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-sm transition-all",
+                  "border border-cyber-cyan/20",
+                  currentPage === 1
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40 active:bg-cyber-cyan/20",
+                )}
+              >
+                <ChevronLeft size={16} className="text-cyber-cyan" />
+              </button>
+
+              {/* Page numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number
+                  if (totalPages <= 5) {
+                    pageNum = i + 1
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i
+                  } else {
+                    pageNum = currentPage - 2 + i
+                  }
+
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => goToPage(pageNum)}
+                      className={cn(
+                        "min-w-[40px] min-h-[40px] flex items-center justify-center rounded-sm transition-all",
+                        "border text-sm font-mono",
+                        currentPage === pageNum
+                          ? "bg-cyber-cyan/20 border-cyber-cyan/50 text-cyber-cyan shadow-[0_0_10px_rgba(0,255,255,0.3)]"
+                          : "border-cyber-cyan/20 hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40 text-muted-foreground active:bg-cyber-cyan/20",
+                      )}
+                    >
+                      {pageNum}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Next page */}
+              <button
+                onClick={() => goToPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className={cn(
+                  "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-sm transition-all",
+                  "border border-cyber-cyan/20",
+                  currentPage === totalPages
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40 active:bg-cyber-cyan/20",
+                )}
+              >
+                <ChevronRight size={16} className="text-cyber-cyan" />
+              </button>
+
+              {/* Last page */}
+              <button
+                onClick={() => goToPage(totalPages)}
+                disabled={currentPage === totalPages}
+                className={cn(
+                  "p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-sm transition-all",
+                  "border border-cyber-cyan/20",
+                  currentPage === totalPages
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:bg-cyber-cyan/10 hover:border-cyber-cyan/40 active:bg-cyber-cyan/20",
+                )}
+              >
+                <ChevronsRight size={16} className="text-cyber-cyan" />
+              </button>
+            </div>
+          </div>
+        )}
       </CyberPanel>
     </div>
   )
