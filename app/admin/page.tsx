@@ -144,7 +144,7 @@ export default function AdminDashboardClient({
             </GlitchText>
           </div>
           <button
-            onClick={refreshAllData}
+            onClick={() => { void refreshAllData() }}
             disabled={isRefreshing}
             className={cn(
               "shrink-0 p-2 w-10 h-10 flex items-center justify-center rounded-sm transition-all",
@@ -161,13 +161,7 @@ export default function AdminDashboardClient({
 
         <div className="overflow-x-auto overflow-y-auto max-h-[70vh]">
           <div className="px-3 sm:px-4 md:px-6">
-            <table className="w-full table-fixed md:table-auto">
-              <colgroup>
-                <col className="w-24 sm:w-32" />
-                <col className="w-20 sm:w-28" />
-                <col className="hidden lg:table-column w-48" />
-                <col className="w-24 sm:w-32" />
-              </colgroup>
+            <table className="w-full">
               <thead className="sticky top-0 z-10">
                 <tr className="bg-cyber-black border-b border-cyber-cyan/20">
                   <th className="text-left p-2 sm:p-4 text-xs uppercase tracking-wider text-muted-foreground font-display whitespace-nowrap bg-cyber-black">
@@ -195,13 +189,13 @@ export default function AdminDashboardClient({
                 ) : (
                   currentLogs.map((log: any) => (
                     <tr key={log.id} className="border-b border-cyber-cyan/10 hover:bg-cyber-cyan/5 transition-colors">
-                      <td className="p-2 sm:p-4 text-xs sm:text-sm text-cyber-cyan font-mono truncate">
+                      <td className="p-2 sm:p-4 text-xs sm:text-sm text-cyber-cyan font-mono">
                         {log.username || "System"}
                       </td>
                       <td className="p-2 sm:p-4">
                         <ActionBadge action={log.action} />
                       </td>
-                      <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground hidden lg:table-cell">
+                      <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground max-w-xs hidden lg:table-cell">
                         <span className="block truncate font-mono">{formatDetails(log.details)}</span>
                       </td>
                       <td className="p-2 sm:p-4 text-xs sm:text-sm text-muted-foreground font-mono whitespace-nowrap">

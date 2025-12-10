@@ -66,7 +66,7 @@ export function LoginForm() {
 
   return (
     <>
-      <CyberPanel className="w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-500">
+      <CyberPanel className="w-full relative z-10 animate-in fade-in zoom-in-95 duration-500">
         {/* Terminal header */}
         <div className="flex items-center gap-2 mb-6 pb-4 border-b border-cyber-cyan/20">
           <Terminal className="text-cyber-cyan" size={24} />

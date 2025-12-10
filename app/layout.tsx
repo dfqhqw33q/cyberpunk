@@ -1,5 +1,5 @@
 import type React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Roboto_Mono, Orbitron, Audiowide } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AudioProvider } from "@/components/cyberpunk/audio-provider"
@@ -21,6 +21,13 @@ const audiowide = Audiowide({
   subsets: ["latin"],
   variable: "--font-alert",
 })
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+}
 
 export const metadata: Metadata = {
   title: "CYBERAUTH // Secure Access Terminal",
@@ -51,9 +58,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark h-full scroll-smooth">
       <body
-        className={`${robotoMono.variable} ${orbitron.variable} ${audiowide.variable} font-sans antialiased bg-cyber-black min-h-screen`}
+        className={`${robotoMono.variable} ${orbitron.variable} ${audiowide.variable} font-sans antialiased bg-cyber-black w-screen min-h-screen h-screen overflow-x-hidden`}
       >
         <AudioProvider>
           <BootWrapper>{children}</BootWrapper>

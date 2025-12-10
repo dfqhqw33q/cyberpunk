@@ -13,9 +13,11 @@ interface EditUserFormProps {
   user: AppUser
   onSuccess: () => void
   onCancel?: () => void
+  formId?: string
+  hideActions?: boolean
 }
 
-export function EditUserForm({ user, onSuccess, onCancel }: EditUserFormProps) {
+export function EditUserForm({ user, onSuccess, onCancel, formId, hideActions }: EditUserFormProps) {
   const [username, setUsername] = useState(user.username)
   const [userLevel, setUserLevel] = useState<"admin" | "regular">(user.user_level)
   const [restrictions, setRestrictions] = useState(user.restrictions)
@@ -53,7 +55,7 @@ export function EditUserForm({ user, onSuccess, onCancel }: EditUserFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8 w-full">
+    <form id={formId} onSubmit={handleSubmit} className="space-y-6 md:space-y-8 w-full">
       {/* User Information Section */}
       <FormSection
         title="User Information"
@@ -245,25 +247,23 @@ export function EditUserForm({ user, onSuccess, onCancel }: EditUserFormProps) {
       )}
 
       {/* Action Buttons */}
-      <div className="pt-4 border-t border-cyber-cyan/20 flex flex-col-reverse sm:flex-row gap-3">
-        {onCancel && (
-          <CyberButton
-            type="button"
-            variant="ghost"
-            className="flex-1 sm:flex-none sm:min-w-[140px]"
-            onClick={onCancel}
-          >
-            Cancel
+      {!hideActions && (
+        <div className="pt-4 border-t border-cyber-cyan/20 flex flex-col-reverse sm:flex-row gap-3">
+          {onCancel && (
+            <CyberButton
+              type="button"
+              variant="ghost"
+              className="flex-1 sm:flex-none sm:min-w-[140px]"
+              onClick={onCancel}
+            >
+              Cancel
+            </CyberButton>
+          )}
+          <CyberButton type="submit" className="flex-1 sm:flex-none sm:min-w-[180px]" loading={loading}>
+            Update User
           </CyberButton>
-        )}
-        <CyberButton
-          type="submit"
-          className="flex-1 sm:flex-none sm:min-w-[180px]"
-          loading={loading}
-        >
-          Update User
-        </CyberButton>
-      </div>
+        </div>
+      )}
     </form>
   )
 }

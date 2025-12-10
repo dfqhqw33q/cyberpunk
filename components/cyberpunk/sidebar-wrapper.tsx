@@ -46,19 +46,86 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
   useEffect(() => {
     const checkBreakpoint = () => {
       const width = window.innerWidth
-      setIsMobile(width < 768)
-      setIsTablet(width >= 768 && width < 1024)
+      const isMobileNow = width < 768
+      const isTabletNow = width >= 768 && width < 1024
 
-      if (width >= 768 && width < 1024) {
-        setIsCollapsed(true)
-      } else if (width >= 1024) {
+      // debug
+      try {
+        // eslint-disable-next-line no-console
+        console.debug(`[sidebar] checkBreakpoint -> width=${width}, isMobile=${isMobileNow}, isTablet=${isTabletNow}`)
+      } catch (e) {}
+
+      setIsMobile(isMobileNow)
+      setIsTablet(isTabletNow)
+
+      // Ensure sidebar is closed on mobile and reset collapsed state
+      if (isMobileNow) {
+        setIsOpen(false)
+        setIsCollapsed(false)
+      } else if (isTabletNow) {
+        // keep closed by default on tablet, but allow collapsed state
+        setIsOpen(false)
+        setIsCollapsed(false)
+      } else {
+        // desktop
+        setIsOpen(false)
         setIsCollapsed(false)
       }
     }
 
+    const forceLayoutReset = () => {
+      // force a reflow and fire a synthetic resize to ensure other listeners pick up new dims
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      document && document.body && document.body.offsetHeight
+      try {
+        window.dispatchEvent(new Event("resize"))
+      } catch (e) {}
+    }
+
+    const handleOrientationChange = () => {
+      // longer delay to allow some browsers to update innerWidth/innerHeight
+      setTimeout(() => {
+        checkBreakpoint()
+        forceLayoutReset()
+      }, 300)
+    }
+
     checkBreakpoint()
     window.addEventListener("resize", checkBreakpoint)
-    return () => window.removeEventListener("resize", checkBreakpoint)
+    window.addEventListener("orientationchange", handleOrientationChange)
+    
+    // Media query listeners for additional reliability
+    const mobileQuery = window.matchMedia("(max-width: 767px)")
+    const tabletQuery = window.matchMedia("(min-width: 768px) and (max-width: 1023px)")
+    
+    const handleMediaChange = () => {
+      try {
+        // eslint-disable-next-line no-console
+        console.debug('[sidebar] media change detected')
+      } catch (e) {}
+      setTimeout(checkBreakpoint, 100)
+    }
+    
+    if (mobileQuery.addEventListener) {
+      mobileQuery.addEventListener("change", handleMediaChange)
+      tabletQuery.addEventListener("change", handleMediaChange)
+    } else {
+      mobileQuery.addListener(handleMediaChange)
+      tabletQuery.addListener(handleMediaChange)
+    }
+    
+    return () => {
+      window.removeEventListener("resize", checkBreakpoint)
+      window.removeEventListener("orientationchange", handleOrientationChange)
+      
+      if (mobileQuery.removeEventListener) {
+        mobileQuery.removeEventListener("change", handleMediaChange)
+        tabletQuery.removeEventListener("change", handleMediaChange)
+      } else {
+        mobileQuery.removeListener(handleMediaChange)
+        tabletQuery.removeListener(handleMediaChange)
+      }
+    }
   }, [])
 
   useEffect(() => {
@@ -223,19 +290,18 @@ export function SidebarWrapper({ children }: SidebarWrapperProps) {
         onTouchEnd={isMobile && isOpen ? handleTouchEnd : undefined}
         className={cn(
           "fixed left-0 top-0 h-screen z-40",
-          "transition-transform duration-300 ease-out",
-          "max-md:w-[85vw] max-md:max-w-[320px]",
+          "transition-all duration-300 ease-out",
+          "max-md:w-[85vw] max-md:max-w-xs",
           isMobile && !isOpen && "-translate-x-full",
           isMobile && isOpen && "translate-x-0",
           "md:max-lg:translate-x-0",
-          isTablet && isCollapsed && "md:max-lg:w-16",
+          isTablet && isCollapsed && "md:max-lg:w-20",
           isTablet && !isCollapsed && "md:max-lg:w-64",
           "lg:w-72 lg:translate-x-0",
+          "overflow-y-auto overscroll-contain scrollbar-thin",
         )}
       >
-        <SidebarContext.Provider value={{ isOpen, setIsOpen, isCollapsed, setIsCollapsed, isMobile, isTablet }}>
-          {children}
-        </SidebarContext.Provider>
+        {children}
       </div>
     </SidebarContext.Provider>
   )

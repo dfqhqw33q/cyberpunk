@@ -279,24 +279,62 @@ export function UsersTable({ users, currentUserId }: UsersTableProps) {
       </div>
 
       {/* Add User Modal - Using larger modal size */}
-      <CyberModal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Register New User" size="lg">
+      <CyberModal
+        isOpen={showAddModal}
+        onClose={() => setShowAddModal(false)}
+        title="Register New User"
+        size="lg"
+        footer={(
+          <>
+            <CyberButton variant="ghost" onClick={() => setShowAddModal(false)}>
+              Cancel
+            </CyberButton>
+            <CyberButton
+              onClick={() => (document.getElementById("add-user-form") as HTMLFormElement | null)?.requestSubmit?.()}
+            >
+              Create User
+            </CyberButton>
+          </>
+        )}
+      >
         <AddUserForm
+          formId="add-user-form"
+          hideActions
           onSuccess={() => {
             setShowAddModal(false)
             router.refresh()
           }}
+          onCancel={() => setShowAddModal(false)}
         />
       </CyberModal>
 
       {/* Edit User Modal */}
-      <CyberModal isOpen={!!editUser} onClose={() => setEditUser(null)} title="Edit User" size="lg">
+      <CyberModal
+        isOpen={!!editUser}
+        onClose={() => setEditUser(null)}
+        title="Edit User"
+        size="lg"
+        footer={(
+          <>
+            <CyberButton variant="ghost" onClick={() => setEditUser(null)}>
+              Cancel
+            </CyberButton>
+            <CyberButton onClick={() => (document.getElementById("edit-user-form") as HTMLFormElement | null)?.requestSubmit?.()}>
+              Save Changes
+            </CyberButton>
+          </>
+        )}
+      >
         {editUser && (
           <EditUserForm
+            formId="edit-user-form"
+            hideActions
             user={editUser}
             onSuccess={() => {
               setEditUser(null)
               router.refresh()
             }}
+            onCancel={() => setEditUser(null)}
           />
         )}
       </CyberModal>

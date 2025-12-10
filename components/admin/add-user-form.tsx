@@ -12,9 +12,11 @@ import { cn } from "@/lib/utils"
 interface AddUserFormProps {
   onSuccess: () => void
   onCancel?: () => void
+  formId?: string
+  hideActions?: boolean
 }
 
-export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
+export function AddUserForm({ onSuccess, onCancel, formId, hideActions }: AddUserFormProps) {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [userLevel, setUserLevel] = useState<"admin" | "regular">("regular")
@@ -59,7 +61,7 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8 w-full">
+    <form id={formId} onSubmit={handleSubmit} className="space-y-6 md:space-y-8 w-full">
       {/* Credentials Section */}
       <FormSection
         title="Login Credentials"
@@ -257,25 +259,23 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
       )}
 
       {/* Action Buttons */}
-      <div className="pt-4 border-t border-cyber-cyan/20 flex flex-col-reverse sm:flex-row gap-3">
-        {onCancel && (
-          <CyberButton
-            type="button"
-            variant="ghost"
-            className="flex-1 sm:flex-none sm:min-w-[140px]"
-            onClick={onCancel}
-          >
-            Cancel
+      {!hideActions && (
+        <div className="pt-4 border-t border-cyber-cyan/20 flex flex-col-reverse sm:flex-row gap-3">
+          {onCancel && (
+            <CyberButton
+              type="button"
+              variant="ghost"
+              className="flex-1 sm:flex-none sm:min-w-[140px]"
+              onClick={onCancel}
+            >
+              Cancel
+            </CyberButton>
+          )}
+          <CyberButton type="submit" className="flex-1 sm:flex-none sm:min-w-[180px]" loading={loading}>
+            Create User
           </CyberButton>
-        )}
-        <CyberButton
-          type="submit"
-          className="flex-1 sm:flex-none sm:min-w-[180px]"
-          loading={loading}
-        >
-          Create User
-        </CyberButton>
-      </div>
+        </div>
+      )}
     </form>
   )
 }

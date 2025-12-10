@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { X } from "lucide-react"
 import type { ReactNode } from "react"
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 
 interface CyberModalProps {
   isOpen: boolean
@@ -12,9 +13,10 @@ interface CyberModalProps {
   children: ReactNode
   className?: string
   size?: "sm" | "md" | "lg" | "xl" | "full"
+  footer?: ReactNode
 }
 
-export function CyberModal({ isOpen, onClose, title, children, className, size = "md" }: CyberModalProps) {
+export function CyberModal({ isOpen, onClose, title, children, className, size = "md", footer }: CyberModalProps) {
   const modalRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -87,13 +89,13 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
     full: "max-w-[95vw] md:max-w-[90vw]",
   }
 
-  return (
+  const modal = (
     <div
       ref={overlayRef}
       className="fixed inset-0 z-50 flex items-center justify-center bg-cyber-black/80 backdrop-blur-sm animate-in fade-in duration-300"
       onClick={onClose}
       role="presentation"
-      style={{ 
+      style={{
         overscrollBehavior: "contain",
         touchAction: "pan-y",
       } as React.CSSProperties}
@@ -155,10 +157,15 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
             WebkitUserSelect: "text",
           } as React.CSSProperties}
         >
-          <div className="w-full">
-            {children}
-          </div>
+          <div className="w-full">{children}</div>
         </div>
+
+        {/* Footer (optional) - kept outside scrollable content so actions remain visible */}
+        {footer && (
+          <div className="shrink-0 border-t border-cyber-cyan/20 p-3 sm:p-4 flex items-center justify-end gap-3 bg-transparent">
+            {footer}
+          </div>
+        )}
 
         {/* HUD corners - decorative elements */}
         <div className="absolute top-0 left-0 w-3 h-3 sm:w-4 sm:h-4 border-l-2 border-t-2 border-cyber-cyan pointer-events-none" />
@@ -168,4 +175,11 @@ export function CyberModal({ isOpen, onClose, title, children, className, size =
       </div>
     </div>
   )
+
+  // Render modal into document.body to avoid being constrained by parent transforms/overflow
+  if (typeof document !== "undefined") {
+    return createPortal(modal, document.body)
+  }
+
+  return null
 }

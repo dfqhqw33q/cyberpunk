@@ -16,12 +16,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   }
 
   return (
-    <div className="min-h-screen flex relative">
+    <div className="min-h-screen h-screen w-screen flex relative bg-cyber-black overflow-hidden">
       <DataStreamBg className="opacity-20" />
 
       {/* Grid overlay */}
       <div
-        className="fixed inset-0 pointer-events-none opacity-5"
+        className="fixed inset-0 pointer-events-none opacity-5 z-0"
         style={{
           backgroundImage: `
             linear-gradient(rgba(0, 255, 255, 0.1) 1px, transparent 1px),
@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       />
 
       <AdminSidebar username={session.username} />
-      <main className="flex-1 ml-0 md:ml-16 lg:ml-72 p-4 md:p-5 lg:p-6 pt-20 md:pt-6 relative z-10 transition-all duration-300">
+      <main className="flex-1 w-full ml-0 md:ml-20 lg:ml-72 p-3 sm:p-4 md:p-5 lg:p-6 pt-16 sm:pt-20 md:pt-6 relative z-10 transition-all duration-300 overflow-y-auto">
         {children}
       </main>
     </div>
