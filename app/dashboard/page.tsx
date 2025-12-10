@@ -2,7 +2,7 @@ import { getCurrentUser } from "@/lib/auth"
 import { redirect } from "next/navigation"
 import { CyberPanel } from "@/components/cyberpunk/cyber-panel"
 import { GlitchText } from "@/components/cyberpunk/glitch-text"
-import { User, Shield, Clock, Key } from "lucide-react"
+import { User, Shield, Clock, Key, Users, FileText, Lock, Settings } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 export default async function UserDashboard() {
@@ -20,7 +20,7 @@ export default async function UserDashboard() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <GlitchText as="h1" className="text-xl md:text-2xl mb-2" glow="cyan">
-            WELCOME, {user.username.toUpperCase()}
+            {`WELCOME, ${user.username.toUpperCase()}`}
           </GlitchText>
           <p className="text-muted-foreground text-xs md:text-sm">Your personal access terminal</p>
         </div>
@@ -98,6 +98,59 @@ export default async function UserDashboard() {
         </div>
       </CyberPanel>
 
+      {/* Restricted Admin Actions (if user has permissions) */}
+      {Object.values(user.restrictions).some((v) => v) && (
+        <CyberPanel>
+          <div className="flex items-center gap-3 mb-4">
+            <Lock className="text-cyber-green" size={18} />
+            <GlitchText as="h2" className="text-base md:text-lg" glow="green">
+              RESTRICTED FEATURES
+            </GlitchText>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {user.restrictions.can_add_users && (
+              <a
+                href="/dashboard/add-users"
+                className="flex flex-col items-center gap-2 px-4 py-3 min-h-12 bg-cyber-green/10 border border-cyber-green/30 rounded-sm text-cyber-green hover:bg-cyber-green/20 active:scale-95 transition-all text-center"
+              >
+                <Users size={16} />
+                <span className="text-[10px] md:text-xs font-display uppercase tracking-wider truncate">Add Users</span>
+              </a>
+            )}
+            {user.restrictions.can_edit_users && (
+              <a
+                href="/dashboard/edit-users"
+                className="flex flex-col items-center gap-2 px-4 py-3 min-h-12 bg-cyber-green/10 border border-cyber-green/30 rounded-sm text-cyber-green hover:bg-cyber-green/20 active:scale-95 transition-all text-center"
+              >
+                <Users size={16} />
+                <span className="text-[10px] md:text-xs font-display uppercase tracking-wider truncate">Edit Users</span>
+              </a>
+            )}
+            {user.restrictions.can_view_logs && (
+              <a
+                href="/dashboard/view-logs"
+                className="flex flex-col items-center gap-2 px-4 py-3 min-h-12 bg-cyber-green/10 border border-cyber-green/30 rounded-sm text-cyber-green hover:bg-cyber-green/20 active:scale-95 transition-all text-center"
+              >
+                <FileText size={16} />
+                <span className="text-[10px] md:text-xs font-display uppercase tracking-wider truncate">View Logs</span>
+              </a>
+            )}
+            {user.restrictions.can_manage_roles && (
+              <a
+                href="/dashboard/manage-roles"
+                className="flex flex-col items-center gap-2 px-4 py-3 min-h-12 bg-cyber-green/10 border border-cyber-green/30 rounded-sm text-cyber-green hover:bg-cyber-green/20 active:scale-95 transition-all text-center"
+              >
+                <Shield size={16} />
+                <span className="text-[10px] md:text-xs font-display uppercase tracking-wider truncate">Manage Roles</span>
+              </a>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-4">
+            These features allow you to perform specific admin tasks based on your granted permissions. Click on any feature to access it.
+          </p>
+        </CyberPanel>
+      )}
+
       {/* Quick Actions */}
       <CyberPanel>
         <div className="flex items-center gap-3 mb-4">
@@ -109,7 +162,7 @@ export default async function UserDashboard() {
         <div className="flex flex-wrap gap-3">
           <a
             href="/dashboard/settings"
-            className="flex items-center gap-2 px-4 py-3 min-h-[48px] bg-cyber-cyan/10 border border-cyber-cyan/30 rounded-sm text-cyber-cyan hover:bg-cyber-cyan/20 active:scale-95 transition-all"
+            className="flex items-center gap-2 px-4 py-3 min-h-12 bg-cyber-cyan/10 border border-cyber-cyan/30 rounded-sm text-cyber-cyan hover:bg-cyber-cyan/20 active:scale-95 transition-all"
           >
             <Key size={16} />
             <span className="text-xs md:text-sm font-display uppercase tracking-wider">Change Password</span>

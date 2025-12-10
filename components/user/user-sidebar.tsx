@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { Home, LogOut, User, Shield, UserCog, HelpCircle, AlertTriangle } from "lucide-react"
+import { Home, LogOut, User, Shield, UserCog, HelpCircle, AlertTriangle, Users, FileText, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { GlitchText } from "@/components/cyberpunk/glitch-text"
 import { StatusBadge } from "@/components/cyberpunk/status-badge"
 import { SidebarWrapper, useSidebar } from "@/components/cyberpunk/sidebar-wrapper"
+import { usePermissions } from "@/lib/hooks/use-permissions"
 
 interface UserSidebarProps {
   username: string
@@ -18,6 +19,7 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
   const pathname = usePathname()
   const router = useRouter()
   const { isCollapsed, isTablet, setIsOpen, isMobile } = useSidebar()
+  const { canAddUsers, canEditUsers, canViewLogs, canManageRoles } = usePermissions()
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
@@ -54,10 +56,42 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
       description: "Your account overview",
       color: "cyan",
     },
+    ...(canAddUsers ? [{
+      id: "add-users",
+      label: "Add Users",
+      icon: Users,
+      href: "/dashboard/add-users",
+      description: "Create new users",
+      color: "green",
+    }] : []),
+    ...(canEditUsers ? [{
+      id: "edit-users",
+      label: "Manage Users",
+      icon: UserCog,
+      href: "/dashboard/edit-users",
+      description: "Edit user accounts",
+      color: "green",
+    }] : []),
+    ...(canViewLogs ? [{
+      id: "view-logs",
+      label: "Audit Logs",
+      icon: FileText,
+      href: "/dashboard/view-logs",
+      description: "System activity logs",
+      color: "green",
+    }] : []),
+    ...(canManageRoles ? [{
+      id: "manage-roles",
+      label: "Manage Roles",
+      icon: Shield,
+      href: "/dashboard/manage-roles",
+      description: "Assign user roles",
+      color: "green",
+    }] : []),
     {
       id: "settings",
       label: "Account Settings",
-      icon: UserCog,
+      icon: Lock,
       href: "/dashboard/settings",
       description: "Manage your profile",
       color: "magenta",
@@ -90,6 +124,11 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
         active: "bg-cyber-yellow/20 border-cyber-yellow/50 shadow-[0_0_15px_rgba(255,255,0,0.2)]",
         hover: "hover:bg-cyber-yellow/10 hover:border-cyber-yellow/30",
         text: "text-cyber-yellow",
+      },
+      green: {
+        active: "bg-cyber-green/20 border-cyber-green/50 shadow-[0_0_15px_rgba(0,255,0,0.2)]",
+        hover: "hover:bg-cyber-green/10 hover:border-cyber-green/30",
+        text: "text-cyber-green",
       },
     }
     const c = colors[color] || colors.cyan
@@ -180,6 +219,7 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
                     item.color === "cyan" && "text-cyber-cyan border-cyber-cyan/30",
                     item.color === "magenta" && "text-cyber-magenta border-cyber-magenta/30",
                     item.color === "yellow" && "text-cyber-yellow border-cyber-yellow/30",
+                    item.color === "green" && "text-cyber-green border-cyber-green/30",
                   )}
                 >
                   {item.label}
@@ -195,7 +235,7 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
               onClick={handleLinkClick}
               className={cn(
                 "flex items-center gap-3 w-full px-3 py-3 rounded-sm transition-all duration-300",
-                "border min-h-[56px] group active:scale-[0.98] touch-manipulation",
+                "border min-h-14 group active:scale-[0.98] touch-manipulation",
                 getColorClasses(item.color, isActive),
               )}
             >
@@ -208,7 +248,9 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
                       ? "text-cyber-cyan"
                       : item.color === "magenta"
                         ? "text-cyber-magenta"
-                        : "text-cyber-yellow"
+                        : item.color === "yellow"
+                          ? "text-cyber-yellow"
+                          : "text-cyber-green"
                     : "text-muted-foreground",
                 )}
               />
@@ -221,7 +263,9 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
                         ? "text-cyber-cyan"
                         : item.color === "magenta"
                           ? "text-cyber-magenta"
-                          : "text-cyber-yellow"
+                          : item.color === "yellow"
+                            ? "text-cyber-yellow"
+                            : "text-cyber-green"
                       : "text-foreground",
                   )}
                 >
@@ -236,6 +280,7 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
                     item.color === "cyan" && "bg-cyber-cyan",
                     item.color === "magenta" && "bg-cyber-magenta",
                     item.color === "yellow" && "bg-cyber-yellow",
+                    item.color === "green" && "bg-cyber-green",
                   )}
                 />
               )}
@@ -252,7 +297,7 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
               className={cn(
                 "flex items-center gap-3 px-3 py-3 rounded-sm transition-all duration-300",
                 "bg-cyber-magenta/10 hover:bg-cyber-magenta/20 border border-cyber-magenta/30 hover:border-cyber-magenta/50",
-                "text-cyber-magenta group min-h-[56px] active:scale-[0.98] touch-manipulation",
+                "text-cyber-magenta group min-h-14 active:scale-[0.98] touch-manipulation",
               )}
             >
               <Shield size={20} className="group-hover:animate-pulse shrink-0" />
@@ -306,7 +351,7 @@ function UserSidebarContent({ username, userLevel, passwordExpiresAt }: UserSide
             "flex items-center gap-3 w-full rounded-sm transition-all duration-300",
             "text-cyber-red bg-cyber-red/10 hover:bg-cyber-red/20 active:bg-cyber-red/30",
             "border border-cyber-red/40 hover:border-cyber-red/60",
-            "group min-h-[48px] touch-manipulation active:scale-[0.98]",
+            "group min-h-12 touch-manipulation active:scale-[0.98]",
             showCollapsed ? "justify-center p-2" : "px-3 py-2.5",
           )}
           title={showCollapsed ? "Disconnect" : undefined}

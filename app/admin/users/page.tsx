@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { adminGetAllUsers } from "@/lib/admin"
 import { UsersTable } from "@/components/admin/users-table"
@@ -7,7 +8,12 @@ import { Users } from "lucide-react"
 
 export default async function UsersPage() {
   const session = await getSession()
-  if (!session) return null
+  if (!session) redirect("/login")
+
+  // Check if regular user has can_edit_users permission
+  if (session.userLevel === "regular" && !session.restrictions?.can_edit_users) {
+    redirect("/admin")
+  }
 
   const result = await adminGetAllUsers(session.userId)
   const users = result.users || []

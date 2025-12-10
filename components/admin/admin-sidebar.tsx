@@ -9,12 +9,20 @@ import { SidebarWrapper, useSidebar } from "@/components/cyberpunk/sidebar-wrapp
 
 interface AdminSidebarProps {
   username: string
+  userLevel: "admin" | "regular"
+  permissions?: {
+    can_add_users?: boolean
+    can_edit_users?: boolean
+    can_view_logs?: boolean
+    can_manage_roles?: boolean
+  }
 }
 
-function AdminSidebarContent({ username }: AdminSidebarProps) {
+function AdminSidebarContent({ username, userLevel, permissions = {} }: AdminSidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const { isCollapsed, isTablet, setIsOpen, isMobile } = useSidebar()
+  const isRegularUser = userLevel === "regular"
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
@@ -36,6 +44,7 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
       href: "/admin",
       description: "System status & quick actions",
       color: "cyan",
+      requiredPermission: undefined, // Always visible
     },
     {
       id: "users",
@@ -44,6 +53,7 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
       href: "/admin/users",
       description: "Manage all system users",
       color: "cyan",
+      requiredPermission: "can_edit_users" as const,
     },
     {
       id: "audit",
@@ -52,6 +62,7 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
       href: "/admin/audit-logs",
       description: "System activity tracking",
       color: "yellow",
+      requiredPermission: "can_view_logs" as const,
     },
     {
       id: "settings",
@@ -60,6 +71,7 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
       href: "/admin/settings",
       description: "Security configuration",
       color: "magenta",
+      requiredPermission: "can_manage_roles" as const,
     },
     {
       id: "profile",
@@ -68,8 +80,18 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
       href: "/admin/profile",
       description: "Admin account settings",
       color: "green",
+      requiredPermission: undefined, // Always visible
     },
   ]
+
+  // Filter navigation items based on permissions
+  const visibleSections = navSections.filter((section) => {
+    // Admins see everything
+    if (!isRegularUser) return true
+    // Regular users only see items they have permission for or no permission required
+    if (!section.requiredPermission) return true
+    return permissions[section.requiredPermission]
+  })
 
   const showCollapsed = isTablet && isCollapsed
 
@@ -116,15 +138,17 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
       <div className={cn("border-b border-cyber-cyan/20 shrink-0", showCollapsed ? "p-2" : "p-4 lg:p-6")}>
         <div className={cn("flex items-center", showCollapsed ? "justify-center" : "gap-3")}>
           <div className="relative">
-            <Shield className="text-cyber-magenta" size={showCollapsed ? 24 : 28} />
+            <Shield className={cn(isRegularUser ? "text-cyber-cyan" : "text-cyber-magenta")} size={showCollapsed ? 24 : 28} />
             <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-cyber-green rounded-full animate-pulse" />
           </div>
           {!showCollapsed && (
             <div>
-              <GlitchText as="h1" className="text-lg lg:text-xl" glow="magenta">
-                ADMIN PANEL
+              <GlitchText as="h1" className="text-lg lg:text-xl" glow={isRegularUser ? "cyan" : "magenta"}>
+                {isRegularUser ? "DELEGATED ADMIN" : "ADMIN PANEL"}
               </GlitchText>
-              <p className="text-[10px] lg:text-xs text-muted-foreground font-mono">SYSTEM CONTROL v2.0</p>
+              <p className="text-[10px] lg:text-xs text-muted-foreground font-mono">
+                {isRegularUser ? "RESTRICTED ACCESS v2.0" : "SYSTEM CONTROL v2.0"}
+              </p>
             </div>
           )}
         </div>
@@ -137,7 +161,17 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
           showCollapsed ? "p-2" : "p-3 lg:p-4",
         )}
       >
-        {navSections.map((section) => {
+        {isRegularUser && visibleSections.length > 0 && (
+          <div className="mb-3 p-2 bg-cyber-cyan/5 border border-cyber-cyan/30 rounded-sm">
+            <p className="text-[10px] font-mono text-cyber-cyan uppercase tracking-widest">
+              📋 Granted Permissions
+            </p>
+            <p className="text-[9px] text-muted-foreground mt-1">
+              You can only access features below
+            </p>
+          </div>
+        )}
+        {visibleSections.map((section) => {
           const isActive = pathname === section.href || (section.href !== "/admin" && pathname.startsWith(section.href))
 
           if (showCollapsed) {
@@ -228,7 +262,9 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
               <p className="text-[10px] lg:text-xs text-muted-foreground uppercase tracking-wider">Online as</p>
             </div>
             <p className="text-sm text-cyber-cyan font-display truncate">{username}</p>
-            <p className="text-[10px] text-cyber-magenta font-mono mt-1">ADMIN PRIVILEGES</p>
+            <p className={cn("text-[10px] font-mono mt-1", isRegularUser ? "text-cyber-yellow" : "text-cyber-magenta")}>
+              {isRegularUser ? "LIMITED PRIVILEGES" : "ADMIN PRIVILEGES"}
+            </p>
           </div>
         )}
         <button
@@ -250,10 +286,10 @@ function AdminSidebarContent({ username }: AdminSidebarProps) {
   )
 }
 
-export function AdminSidebar({ username }: AdminSidebarProps) {
+export function AdminSidebar({ username, userLevel, permissions }: AdminSidebarProps) {
   return (
     <SidebarWrapper>
-      <AdminSidebarContent username={username} />
+      <AdminSidebarContent username={username} userLevel={userLevel} permissions={permissions} />
     </SidebarWrapper>
   )
 }
